@@ -7,7 +7,6 @@ import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
 import * as path from "path";
-import ReactRefreshTypeScript from "react-refresh-typescript";
 import * as webpack from "webpack";
 import "webpack-dev-server";
 import WebpackNodeExternals from "webpack-node-externals";
@@ -78,17 +77,9 @@ const client: webpack.Configuration = {
         use: [...cssLoaders, "sass-loader"],
       },
       {
+        test: /\.(js|jsx|ts|tsx)$/,
         exclude: /node_modules/,
-        test: /\.(ts|tsx)$/,
-        use: {
-          loader: "ts-loader",
-          options: {
-            transpileOnly: mode === "development",
-            getCustomTransformers: () => ({
-              before: compact([mode === "development" ? ReactRefreshTypeScript() : null]),
-            }),
-          },
-        },
+        use: "babel-loader",
       },
     ],
   },
@@ -114,6 +105,7 @@ const client: webpack.Configuration = {
     path: path.resolve(__dirname, "build/public"),
   },
   plugins: compact([
+    new ForkTsCheckerWebpackPlugin(),
     new HtmlWebpackPlugin({
       filename: "index.html",
       template: "public/index.html",
@@ -125,7 +117,6 @@ const client: webpack.Configuration = {
           patterns: [{ from: "public", filter: (path) => !path.endsWith("index.html") }],
         })
       : null,
-    mode === "development" ? new ForkTsCheckerWebpackPlugin() : null,
     mode === "development" ? new ReactRefreshWebpackPlugin({ overlay: true }) : null,
     mode === "development"
       ? new EslintWebpackPlugin({ extensions: ["ts", "tsx"], failOnError: false, files: "./src" })
@@ -143,7 +134,7 @@ const server: webpack.Configuration = {
   devtool: mode === "development" ? "source-map" : false,
   entry: path.resolve(__dirname, "src/server.ts"),
   externals: [WebpackNodeExternals()],
-  mode: mode,
+  mode,
   module: {
     rules: [
       {
@@ -151,9 +142,9 @@ const server: webpack.Configuration = {
         type: "asset/resource",
       },
       {
+        test: /\.(js|jsx|ts|tsx)$/,
         exclude: /node_modules/,
-        test: /\.ts$/,
-        use: { loader: "ts-loader", options: { transpileOnly: mode === "development" } },
+        use: "babel-loader",
       },
     ],
   },
@@ -179,7 +170,7 @@ const server: webpack.Configuration = {
   },
   plugins: compact([
     mode === "production" ? new CleanWebpackPlugin() : null,
-    mode === "development" ? new ForkTsCheckerWebpackPlugin() : null,
+    mode === "production" ? new ForkTsCheckerWebpackPlugin() : null,
   ]),
   resolve: {
     extensions: [".js", ".ts"],
