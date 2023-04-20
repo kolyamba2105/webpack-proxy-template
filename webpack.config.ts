@@ -46,6 +46,17 @@ const cssLoaders: webpack.RuleSetUse = [
   },
 ];
 
+function esLintPlugin(path: "server" | "client") {
+  return path === "server" && mode === "development"
+    ? null
+    : new EslintWebpackPlugin({
+        extensions: compact(["ts", path === "client" ? "tsx" : null]),
+        failOnError: mode === "production",
+        failOnWarning: mode === "production",
+        files: `./src/${path}`,
+      });
+}
+
 const client: webpack.Configuration = {
   devServer: {
     client: { overlay: { errors: true, warnings: false } },
@@ -60,7 +71,7 @@ const client: webpack.Configuration = {
     },
   },
   devtool: mode === "development" ? "source-map" : false,
-  entry: path.resolve(__dirname, "src/index.tsx"),
+  entry: path.resolve(__dirname, "src/client/index.tsx"),
   mode,
   module: {
     rules: [
@@ -105,6 +116,7 @@ const client: webpack.Configuration = {
     path: path.resolve(__dirname, "build/public"),
   },
   plugins: compact([
+    esLintPlugin("client"),
     new ForkTsCheckerWebpackPlugin(),
     new HtmlWebpackPlugin({
       filename: "index.html",
@@ -118,9 +130,6 @@ const client: webpack.Configuration = {
         })
       : null,
     mode === "development" ? new ReactRefreshWebpackPlugin({ overlay: true }) : null,
-    mode === "development"
-      ? new EslintWebpackPlugin({ extensions: ["ts", "tsx"], failOnError: false, files: "./src" })
-      : null,
   ]),
   resolve: {
     extensions: [".js", ".ts", ".tsx"],
@@ -132,7 +141,7 @@ const client: webpack.Configuration = {
 
 const server: webpack.Configuration = {
   devtool: mode === "development" ? "source-map" : false,
-  entry: path.resolve(__dirname, "src/server.ts"),
+  entry: path.resolve(__dirname, "src/server/index.ts"),
   externals: [WebpackNodeExternals()],
   mode,
   module: {
@@ -169,6 +178,7 @@ const server: webpack.Configuration = {
     path: path.resolve(__dirname, "build"),
   },
   plugins: compact([
+    esLintPlugin("server"),
     mode === "production" ? new CleanWebpackPlugin() : null,
     mode === "production" ? new ForkTsCheckerWebpackPlugin() : null,
   ]),
