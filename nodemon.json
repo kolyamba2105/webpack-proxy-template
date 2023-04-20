@@ -7,8 +7,8 @@
     "node_modules"
   ],
   "watch": [
-    "./src"
+    "./src/server"
   ],
-  "exec": "NODE_PATH=src ts-node ./src/server.ts",
+  "exec": "NODE_PATH=src ts-node ./src/server/index.ts",
   "ext": "ts"
 }
